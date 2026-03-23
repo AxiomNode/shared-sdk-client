@@ -7,6 +7,7 @@ SDKs compartidos para consumo de APIs de AxiomNode.
 - Ofrecer clientes oficiales por lenguaje.
 - Reducir duplicacion de integraciones en consumidores.
 - Estandarizar auth, retries y manejo de errores.
+- Centralizar objetos de contrato y utilidades de forwarding para Gateway/BFF.
 
 ## Estructura
 

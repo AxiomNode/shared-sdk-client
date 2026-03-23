@@ -1,0 +1,58 @@
+name: TypeScript SDK CI
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - "typescript-sdk-v*"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build-typescript-sdk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: typescript
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: typescript/package-lock.json
+      - name: Install dependencies
+        run: npm ci
+      - name: Build SDK
+        run: npm run build
+      - name: Pack SDK artifact
+        run: npm pack
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: typescript-sdk-package
+          path: typescript/*.tgz
+
+  publish-typescript-sdk:
+    if: startsWith(github.ref, 'refs/tags/typescript-sdk-v')
+    needs: build-typescript-sdk
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: typescript
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+      - name: Install dependencies
+        run: npm ci
+      - name: Build SDK
+        run: npm run build
+      - name: Publish package
+        run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
