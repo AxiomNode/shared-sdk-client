@@ -46,6 +46,11 @@ export function extractForwardHeaders(requestHeaders: HeaderBag, includeBody: bo
     headers["x-dev-firebase-uid"] = devFirebaseUid;
   }
 
+  const firebaseIdToken = requestHeaders["x-firebase-id-token"];
+  if (firebaseIdToken) {
+    headers["x-firebase-id-token"] = firebaseIdToken;
+  }
+
   if (includeBody) {
     headers["content-type"] = "application/json";
   }
