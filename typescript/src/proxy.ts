@@ -1,6 +1,6 @@
 export type HeaderBag = Record<string, string | undefined>;
 
-export type ForwardMethod = "GET" | "POST";
+export type ForwardMethod = "GET" | "POST" | "PATCH";
 
 export interface ForwardHttpParams {
   targetUrl: string;
