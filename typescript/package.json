@@ -17,6 +17,18 @@
     "./contracts": {
       "types": "./dist/contracts.d.ts",
       "default": "./dist/contracts.js"
+    },
+    "./ai-engine-client": {
+      "types": "./dist/ai-engine-client.d.ts",
+      "default": "./dist/ai-engine-client.js"
+    },
+    "./trivia-categories": {
+      "types": "./dist/trivia-categories.d.ts",
+      "default": "./dist/trivia-categories.js"
+    },
+    "./private-docs": {
+      "types": "./dist/private-docs.d.ts",
+      "default": "./dist/private-docs.js"
     }
   },
   "scripts": {
