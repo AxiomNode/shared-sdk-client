@@ -8,12 +8,12 @@ import { z } from "zod";
 // contracts-and-schemas/schemas/json/leaderboard.query.v1.json
 export const RandomGameQuerySchema = z.object({
   language: z.string().optional(),
-  categoryId: z.coerce.number().int().positive().optional(),
+  categoryId: z.string().min(1).optional(),
 });
 
 export const GenerateGameRequestSchema = z.object({
   language: z.string().default("es"),
-  categoryId: z.coerce.number().int().positive().optional(),
+  categoryId: z.string().min(1).optional(),
   topic: z.string().min(1).optional(),
   numQuestions: z.coerce.number().int().positive().max(20).optional(),
 });
