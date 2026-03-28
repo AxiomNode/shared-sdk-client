@@ -63,6 +63,11 @@ export function extractForwardHeaders(requestHeaders: HeaderBag, includeBody: bo
     headers["x-firebase-id-token"] = firebaseIdToken;
   }
 
+  const apiKey = requestHeaders["x-api-key"];
+  if (apiKey) {
+    headers["x-api-key"] = apiKey;
+  }
+
   const traceparent = requestHeaders.traceparent;
   if (traceparent) {
     headers.traceparent = traceparent;
