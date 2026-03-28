@@ -63,6 +63,21 @@ export function extractForwardHeaders(requestHeaders: HeaderBag, includeBody: bo
     headers["x-firebase-id-token"] = firebaseIdToken;
   }
 
+  const traceparent = requestHeaders.traceparent;
+  if (traceparent) {
+    headers.traceparent = traceparent;
+  }
+
+  const tracestate = requestHeaders.tracestate;
+  if (tracestate) {
+    headers.tracestate = tracestate;
+  }
+
+  const baggage = requestHeaders.baggage;
+  if (baggage) {
+    headers.baggage = baggage;
+  }
+
   if (includeBody) {
     headers["content-type"] = "application/json";
   }
