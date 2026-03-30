@@ -27,9 +27,13 @@
       "types": "./dist/ai-engine-client.d.ts",
       "default": "./dist/ai-engine-client.js"
     },
+    "./game-categories": {
+      "types": "./dist/game-categories.d.ts",
+      "default": "./dist/game-categories.js"
+    },
     "./trivia-categories": {
-      "types": "./dist/trivia-categories.d.ts",
-      "default": "./dist/trivia-categories.js"
+      "types": "./dist/game-categories.d.ts",
+      "default": "./dist/game-categories.js"
     },
     "./private-docs": {
       "types": "./dist/private-docs.d.ts",
@@ -45,6 +49,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.1",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "undici": "^7.24.6"
   }
 }

@@ -14,8 +14,10 @@ export const RandomGameQuerySchema = z.object({
 export const GenerateGameRequestSchema = z.object({
   language: z.string().default("es"),
   categoryId: z.string().min(1).optional(),
-  topic: z.string().min(1).optional(),
-  numQuestions: z.coerce.number().int().positive().max(20).optional(),
+  numQuestions: z.coerce.number().int().positive().max(50).optional(),
+  difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
+  letters: z.string().optional(),
+  requestedBy: z.enum(["api", "backoffice"]).optional(),
 });
 
 export const LeaderboardQuerySchema = z.object({

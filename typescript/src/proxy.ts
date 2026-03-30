@@ -1,6 +1,8 @@
+import { Agent, setGlobalDispatcher } from "undici";
+
 export type HeaderBag = Record<string, string | undefined>;
 
-export type ForwardMethod = "GET" | "POST" | "PATCH";
+export type ForwardMethod = "GET" | "POST" | "PATCH" | "DELETE";
 
 export interface ForwardHttpParams {
   targetUrl: string;
@@ -14,6 +16,22 @@ export interface ForwardHttpResult {
   status: number;
   contentType: string;
   payload: unknown;
+}
+
+/**
+ * Configure the global HTTP dispatcher for connection reuse.
+ * Call once at server startup to enable persistent connections
+ * with keep-alive across all `fetch()` calls.
+ */
+export function configureHttpAgent(options?: {
+  keepAliveTimeoutMs?: number;
+  pipelining?: number;
+}): void {
+  const agent = new Agent({
+    keepAliveTimeout: options?.keepAliveTimeoutMs ?? 30_000,
+    pipelining: options?.pipelining ?? 1,
+  });
+  setGlobalDispatcher(agent);
 }
 
 export class UpstreamTimeoutError extends Error {
@@ -90,24 +108,8 @@ export function extractForwardHeaders(requestHeaders: HeaderBag, includeBody: bo
   return headers;
 }
 
-function parseForwardPayload(bodyText: string, contentType: string): unknown {
-  if (!contentType.includes("application/json")) {
-    return bodyText;
-  }
-
-  if (!bodyText) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(bodyText);
-  } catch {
-    return { raw: bodyText };
-  }
-}
-
 export async function forwardHttp(params: ForwardHttpParams): Promise<ForwardHttpResult> {
-  const includeBody = params.method !== "GET";
+  const includeBody = params.method !== "GET" && params.method !== "DELETE";
   const timeoutMs = params.timeoutMs ?? 15_000;
   const controller = new AbortController();
   const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
@@ -129,12 +131,100 @@ export async function forwardHttp(params: ForwardHttpParams): Promise<ForwardHtt
     clearTimeout(timeoutHandle);
   }
 
-  const bodyText = await response.text();
   const contentType = response.headers.get("content-type") ?? "application/json";
+  let payload: unknown;
+
+  if (contentType.includes("application/json")) {
+    try {
+      payload = await response.json();
+    } catch {
+      payload = {};
+    }
+  } else {
+    payload = await response.text();
+  }
 
   return {
     status: response.status,
     contentType,
-    payload: parseForwardPayload(bodyText, contentType),
+    payload,
   };
+}
+
+// ---------------------------------------------------------------------------
+// Circuit Breaker
+// ---------------------------------------------------------------------------
+
+export class CircuitBreakerOpenError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "CircuitBreakerOpenError";
+  }
+}
+
+type CircuitState = "closed" | "open" | "half-open";
+
+export interface CircuitBreakerOptions {
+  /** Number of consecutive failures before opening the circuit. Default: 5 */
+  failureThreshold?: number;
+  /** How long (ms) to stay open before trying half-open. Default: 30000 */
+  resetTimeoutMs?: number;
+}
+
+/**
+ * Simple circuit breaker for upstream HTTP calls.
+ *
+ * Usage:
+ * ```ts
+ * const breaker = new CircuitBreaker({ failureThreshold: 5, resetTimeoutMs: 30000 });
+ * const result = await breaker.call(() => forwardHttp(params));
+ * ```
+ */
+export class CircuitBreaker {
+  private state: CircuitState = "closed";
+  private failures = 0;
+  private lastFailureTime = 0;
+  private readonly failureThreshold: number;
+  private readonly resetTimeoutMs: number;
+
+  constructor(options?: CircuitBreakerOptions) {
+    this.failureThreshold = options?.failureThreshold ?? 5;
+    this.resetTimeoutMs = options?.resetTimeoutMs ?? 30_000;
+  }
+
+  async call<T>(fn: () => Promise<T>): Promise<T> {
+    if (this.state === "open") {
+      if (Date.now() - this.lastFailureTime >= this.resetTimeoutMs) {
+        this.state = "half-open";
+      } else {
+        throw new CircuitBreakerOpenError("Circuit breaker is open — upstream unavailable");
+      }
+    }
+
+    try {
+      const result = await fn();
+      this.onSuccess();
+      return result;
+    } catch (error) {
+      this.onFailure();
+      throw error;
+    }
+  }
+
+  private onSuccess(): void {
+    this.failures = 0;
+    this.state = "closed";
+  }
+
+  private onFailure(): void {
+    this.failures++;
+    this.lastFailureTime = Date.now();
+    if (this.failures >= this.failureThreshold) {
+      this.state = "open";
+    }
+  }
+
+  getState(): CircuitState {
+    return this.state;
+  }
 }

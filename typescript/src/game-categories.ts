@@ -1,4 +1,7 @@
-export interface TriviaCategory {
+// Static catalog data for game categories and supported languages.
+// JSON Schema definition: contracts-and-schemas/schemas/json/game-categories.v1.json
+
+export interface GameCategory {
   id: string;
   name: string;
 }
@@ -8,7 +11,7 @@ export interface SupportedLanguage {
   name: string;
 }
 
-export const TRIVIA_CATEGORIES: TriviaCategory[] = [
+export const GAME_CATEGORIES: GameCategory[] = [
   { id: "9", name: "General Knowledge" },
   { id: "10", name: "Entertainment: Books" },
   { id: "11", name: "Entertainment: Film" },
@@ -35,10 +38,19 @@ export const TRIVIA_CATEGORIES: TriviaCategory[] = [
   { id: "32", name: "Entertainment: Cartoon & Animations" }
 ];
 
-export const TRIVIA_CATEGORY_IDS = TRIVIA_CATEGORIES.map((item) => item.id);
-export const TRIVIA_CATEGORY_BY_ID = new Map(
-  TRIVIA_CATEGORIES.map((item) => [item.id, item] as const)
+export const GAME_CATEGORY_IDS = GAME_CATEGORIES.map((item) => item.id);
+export const GAME_CATEGORY_BY_ID = new Map(
+  GAME_CATEGORIES.map((item) => [item.id, item] as const)
 );
+
+/** @deprecated Use GameCategory instead */
+export type TriviaCategory = GameCategory;
+/** @deprecated Use GAME_CATEGORIES instead */
+export const TRIVIA_CATEGORIES = GAME_CATEGORIES;
+/** @deprecated Use GAME_CATEGORY_IDS instead */
+export const TRIVIA_CATEGORY_IDS = GAME_CATEGORY_IDS;
+/** @deprecated Use GAME_CATEGORY_BY_ID instead */
+export const TRIVIA_CATEGORY_BY_ID = GAME_CATEGORY_BY_ID;
 
 export const SUPPORTED_LANGUAGES: SupportedLanguage[] = [
   { code: "es", name: "espanol" },
