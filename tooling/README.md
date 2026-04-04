@@ -1,3 +1,3 @@
 # Tooling
 
-Scripts de generacion, validacion y publicacion de SDKs.
+Scripts for SDK generation, validation, packaging, and publishing.

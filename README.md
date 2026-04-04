@@ -1,20 +1,33 @@
 # shared-sdk-client
 
-SDKs compartidos para consumo de APIs de AxiomNode.
+Shared SDK repository for AxiomNode services and clients.
 
-## Objetivo
+## Scope
 
-- Ofrecer clientes oficiales por lenguaje.
-- Reducir duplicacion de integraciones en consumidores.
-- Estandarizar auth, retries y manejo de errores.
-- Centralizar objetos de contrato y utilidades de forwarding para Gateway/BFF.
+- Provide reusable client libraries and integration helpers.
+- Keep contracts, proxy helpers, and shared domain models in one place.
+- Reduce duplication across gateway, BFF, and microservice repositories.
 
-## Estructura
+## Structure
 
-- `openapi/`: especificaciones fuente para generacion.
-- `tooling/`: scripts de build y publicacion.
-- `typescript/`, `kotlin/`, `python/`: implementaciones por lenguaje.
+- `typescript/`: production-ready SDK package.
+- `python/`, `kotlin/`: language-specific scaffolds and docs.
+- `openapi/`: API sources used for SDK generation.
+- `tooling/`: generation/build/publishing automation.
 
-## CI
+## Workflows
 
-Incluye `validate-sdk-layout.yml` para validar layout base.
+- `validate-sdk-layout.yml`
+	- Trigger: push (`main`, `develop`), pull request, manual dispatch.
+	- Purpose: validates expected repository layout.
+
+- `typescript-sdk-ci.yml`
+	- Trigger: push (`main`, `develop`), pull request, manual dispatch, and tags `typescript-sdk-v*`.
+	- Jobs:
+		- build TypeScript SDK
+		- package `.tgz` artifact
+		- publish to npm when tag matches `typescript-sdk-v*`
+
+## Release note
+
+When contracts change in `contracts-and-schemas`, regenerate/rebuild the TypeScript SDK and upgrade dependent services in the same rollout window.

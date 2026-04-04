@@ -1,3 +1,3 @@
 # Python SDK
 
-Cliente Python para integraciones server-to-server.
+Python client SDK for server-to-server integrations.

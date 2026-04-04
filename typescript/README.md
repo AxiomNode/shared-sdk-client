@@ -1,11 +1,11 @@
 # TypeScript SDK
 
-Cliente TypeScript para consumo de API Gateway y BFFs.
+TypeScript client SDK for `api-gateway`, BFFs, and internal service integrations.
 
-## Modulos
+## Modules
 
-- `@axiomnode/shared-sdk-client/proxy`: utilidades comunes para forwarding HTTP.
-- `@axiomnode/shared-sdk-client/contracts`: esquemas y tipos de requests compartidos.
+- `@axiomnode/shared-sdk-client/proxy`: shared HTTP forwarding helpers.
+- `@axiomnode/shared-sdk-client/contracts`: shared request/response contracts.
 
 ## Build
 
@@ -13,17 +13,17 @@ Cliente TypeScript para consumo de API Gateway y BFFs.
 npm install
 npm run build
 
-# generar contratos desde contracts-and-schemas
+# generate contracts from contracts-and-schemas
 npm run generate:contracts
 ```
 
-## Objetivo
+## Goal
 
-Evitar duplicacion de objetos de contrato y utilidades de transporte en repositorios de runtime.
+Avoid contract/model and transport-helper duplication across runtime repositories.
 
-Los esquemas se alinean con `contracts-and-schemas/schemas/json/*.v1.json`.
+Schemas are aligned with `contracts-and-schemas/schemas/json/*.v1.json`.
 
 ## CI/CD
 
 - Workflow: `.github/workflows/typescript-sdk-ci.yml`
-- Publicacion automatica al crear tag `typescript-sdk-v*` (requiere `NPM_TOKEN`)
+- Automatic publication when creating tag `typescript-sdk-v*` (requires `NPM_TOKEN`)
