@@ -1,0 +1,55 @@
+{
+  "name": "@axiomnode/shared-sdk-client",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "package.json",
+    "README.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./proxy": {
+      "types": "./dist/proxy.d.ts",
+      "default": "./dist/proxy.js"
+    },
+    "./contracts": {
+      "types": "./dist/contracts.d.ts",
+      "default": "./dist/contracts.js"
+    },
+    "./ai-engine-client": {
+      "types": "./dist/ai-engine-client.d.ts",
+      "default": "./dist/ai-engine-client.js"
+    },
+    "./game-categories": {
+      "types": "./dist/game-categories.d.ts",
+      "default": "./dist/game-categories.js"
+    },
+    "./trivia-categories": {
+      "types": "./dist/game-categories.d.ts",
+      "default": "./dist/game-categories.js"
+    },
+    "./private-docs": {
+      "types": "./dist/private-docs.d.ts",
+      "default": "./dist/private-docs.js"
+    }
+  },
+  "scripts": {
+    "generate:contracts": "node scripts/generate-contracts.mjs",
+    "build": "npm run generate:contracts && tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "typescript": "^5.7.2",
+    "undici": "^7.24.6"
+  }
+}
