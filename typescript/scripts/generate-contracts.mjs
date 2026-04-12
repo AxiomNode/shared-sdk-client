@@ -15,6 +15,17 @@ const schemaMap = {
   LeaderboardQuerySchema: "leaderboard.query.v1.json",
 };
 
+if (!fs.existsSync(contractsBaseDir)) {
+  if (fs.existsSync(outputPath)) {
+    console.warn(
+      `Contracts source directory not found at ${contractsBaseDir}. Keeping existing ${outputPath}.`,
+    );
+    process.exit(0);
+  }
+
+  throw new Error(`Contracts source directory not found at ${contractsBaseDir}`);
+}
+
 function zodTypeForProperty(propSchema) {
   if (propSchema.enum) {
     const values = propSchema.enum.map((value) => JSON.stringify(value)).join(", ");
