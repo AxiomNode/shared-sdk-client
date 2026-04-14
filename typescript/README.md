@@ -22,6 +22,7 @@ npm run generate:contracts
 Avoid contract/model and transport-helper duplication across runtime repositories.
 
 Schemas are aligned with `contracts-and-schemas/schemas/json/*.v1.json`.
+Static game catalogs are validated against the generated `GameCategoriesSchema` during build.
 
 ## CI/CD
 

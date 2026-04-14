@@ -13,6 +13,7 @@ const schemaMap = {
   RandomGameQuerySchema: "random-game.query.v1.json",
   GenerateGameRequestSchema: "game-generate.request.v1.json",
   LeaderboardQuerySchema: "leaderboard.query.v1.json",
+  GameCategoriesSchema: "game-categories.v1.json",
 };
 
 if (!fs.existsSync(contractsBaseDir)) {
@@ -26,58 +27,116 @@ if (!fs.existsSync(contractsBaseDir)) {
   throw new Error(`Contracts source directory not found at ${contractsBaseDir}`);
 }
 
-function zodTypeForProperty(propSchema) {
-  if (propSchema.enum) {
-    const values = propSchema.enum.map((value) => JSON.stringify(value)).join(", ");
+function appendDefault(expr, schema) {
+  if (schema.default !== undefined) {
+    return `${expr}.default(${JSON.stringify(schema.default)})`;
+  }
+
+  return expr;
+}
+
+function zodTypeForSchema(schema) {
+  if (schema.const !== undefined) {
+    return `z.literal(${JSON.stringify(schema.const)})`;
+  }
+
+  if (schema.enum) {
+    const values = schema.enum.map((value) => JSON.stringify(value)).join(", ");
     return `z.enum([${values}])`;
   }
 
-  if (propSchema.type === "string") {
+  if (schema.type === "string") {
     let expr = "z.string()";
-    if (typeof propSchema.minLength === "number") {
-      expr += `.min(${propSchema.minLength})`;
+    if (typeof schema.minLength === "number") {
+      expr += `.min(${schema.minLength})`;
     }
-    if (propSchema.default !== undefined) {
-      expr += `.default(${JSON.stringify(propSchema.default)})`;
+    if (typeof schema.maxLength === "number") {
+      expr += `.max(${schema.maxLength})`;
     }
-    return expr;
+    if (typeof schema.pattern === "string") {
+      expr += `.regex(new RegExp(${JSON.stringify(schema.pattern)}))`;
+    }
+    return appendDefault(expr, schema);
   }
 
-  if (propSchema.type === "integer") {
+  if (schema.type === "integer") {
     let expr = "z.coerce.number().int()";
-    if (typeof propSchema.minimum === "number") {
-      if (propSchema.minimum === 1) {
+    if (typeof schema.minimum === "number") {
+      if (schema.minimum === 1) {
         expr += ".positive()";
       } else {
-        expr += `.min(${propSchema.minimum})`;
+        expr += `.min(${schema.minimum})`;
       }
     }
-    if (typeof propSchema.maximum === "number") {
-      expr += `.max(${propSchema.maximum})`;
+    if (typeof schema.maximum === "number") {
+      expr += `.max(${schema.maximum})`;
     }
-    return expr;
+    return appendDefault(expr, schema);
   }
 
-  throw new Error(`Unsupported schema property type: ${JSON.stringify(propSchema)}`);
-}
-
-function buildSchemaExpression(schema) {
-  const required = new Set(schema.required ?? []);
-  const lines = Object.entries(schema.properties ?? {}).map(([propertyName, propertySchema]) => {
-    let expr = zodTypeForProperty(propertySchema);
-    if (!required.has(propertyName)) {
-      expr += ".optional()";
+  if (schema.type === "number") {
+    let expr = "z.coerce.number()";
+    if (typeof schema.minimum === "number") {
+      expr += `.min(${schema.minimum})`;
     }
-    return `  ${propertyName}: ${expr},`;
-  });
+    if (typeof schema.maximum === "number") {
+      expr += `.max(${schema.maximum})`;
+    }
+    return appendDefault(expr, schema);
+  }
 
-  return `z.object({\n${lines.join("\n")}\n})`;
+  if (schema.type === "boolean") {
+    return appendDefault("z.boolean()", schema);
+  }
+
+  if (schema.type === "array") {
+    if (!schema.items) {
+      throw new Error(`Array schema is missing items: ${JSON.stringify(schema)}`);
+    }
+
+    let expr = `z.array(${zodTypeForSchema(schema.items)})`;
+    if (typeof schema.minItems === "number") {
+      expr += `.min(${schema.minItems})`;
+    }
+    if (typeof schema.maxItems === "number") {
+      expr += `.max(${schema.maxItems})`;
+    }
+    return appendDefault(expr, schema);
+  }
+
+  if (schema.type === "object") {
+    const properties = Object.entries(schema.properties ?? {});
+    if (properties.length === 0) {
+      if (schema.additionalProperties) {
+        return "z.record(z.unknown())";
+      }
+
+      return "z.object({}).strict()";
+    }
+
+    const required = new Set(schema.required ?? []);
+    const lines = properties.map(([propertyName, propertySchema]) => {
+      let expr = zodTypeForSchema(propertySchema);
+      if (!required.has(propertyName)) {
+        expr += ".optional()";
+      }
+      return `  ${propertyName}: ${expr},`;
+    });
+
+    let expr = `z.object({\n${lines.join("\n")}\n})`;
+    if (schema.additionalProperties === false) {
+      expr += ".strict()";
+    }
+    return appendDefault(expr, schema);
+  }
+
+  throw new Error(`Unsupported schema property type: ${JSON.stringify(schema)}`);
 }
 
 const generatedSchemas = Object.entries(schemaMap).map(([schemaName, fileName]) => {
   const schemaPath = path.join(contractsBaseDir, fileName);
   const schema = JSON.parse(fs.readFileSync(schemaPath, "utf8"));
-  const schemaExpression = buildSchemaExpression(schema);
+  const schemaExpression = zodTypeForSchema(schema);
   return { schemaName, schemaExpression, fileName };
 });
 
@@ -95,11 +154,9 @@ const schemaDeclarations = generatedSchemas
   .map((entry) => `export const ${entry.schemaName} = ${entry.schemaExpression};`)
   .join("\n\n");
 
-const typeDeclarations = [
-  "export type RandomGameQuery = z.infer<typeof RandomGameQuerySchema>;",
-  "export type GenerateGameRequest = z.infer<typeof GenerateGameRequestSchema>;",
-  "export type LeaderboardQuery = z.infer<typeof LeaderboardQuerySchema>;",
-].join("\n");
+const typeDeclarations = generatedSchemas
+  .map((entry) => `export type ${entry.schemaName.replace(/Schema$/, "")} = z.infer<typeof ${entry.schemaName}>;`)
+  .join("\n");
 
 const output = `${header}${schemaDeclarations}\n\n${typeDeclarations}\n`;
 fs.writeFileSync(outputPath, output, "utf8");

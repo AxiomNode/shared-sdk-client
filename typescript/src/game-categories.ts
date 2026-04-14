@@ -1,17 +1,7 @@
-// Static catalog data for game categories and supported languages.
-// JSON Schema definition: contracts-and-schemas/schemas/json/game-categories.v1.json
+import { GameCategoriesSchema, type GameCategories } from "./contracts.js";
 
-export interface GameCategory {
-  id: string;
-  name: string;
-}
-
-export interface SupportedLanguage {
-  code: string;
-  name: string;
-}
-
-export const GAME_CATEGORIES: GameCategory[] = [
+const GAME_CATALOGS = GameCategoriesSchema.parse({
+  categories: [
   { id: "9", name: "General Knowledge" },
   { id: "10", name: "Entertainment: Books" },
   { id: "11", name: "Entertainment: Film" },
@@ -36,7 +26,20 @@ export const GAME_CATEGORIES: GameCategory[] = [
   { id: "30", name: "Science: Gadgets" },
   { id: "31", name: "Entertainment: Japanese Anime & Manga" },
   { id: "32", name: "Entertainment: Cartoon & Animations" }
-];
+  ],
+  languages: [
+    { code: "es", name: "espanol" },
+    { code: "en", name: "ingles" },
+    { code: "fr", name: "frances" },
+    { code: "de", name: "aleman" },
+    { code: "it", name: "italiano" }
+  ]
+});
+
+export type GameCategory = GameCategories["categories"][number];
+export type SupportedLanguage = GameCategories["languages"][number];
+
+export const GAME_CATEGORIES: GameCategory[] = GAME_CATALOGS.categories;
 
 export const GAME_CATEGORY_IDS = GAME_CATEGORIES.map((item) => item.id);
 export const GAME_CATEGORY_BY_ID = new Map(
@@ -52,13 +55,7 @@ export const TRIVIA_CATEGORY_IDS = GAME_CATEGORY_IDS;
 /** @deprecated Use GAME_CATEGORY_BY_ID instead */
 export const TRIVIA_CATEGORY_BY_ID = GAME_CATEGORY_BY_ID;
 
-export const SUPPORTED_LANGUAGES: SupportedLanguage[] = [
-  { code: "es", name: "espanol" },
-  { code: "en", name: "ingles" },
-  { code: "fr", name: "frances" },
-  { code: "de", name: "aleman" },
-  { code: "it", name: "italiano" }
-];
+export const SUPPORTED_LANGUAGES: SupportedLanguage[] = GAME_CATALOGS.languages;
 
 export const SUPPORTED_LANGUAGE_CODES = SUPPORTED_LANGUAGES.map((item) => item.code);
 export const SUPPORTED_LANGUAGE_BY_CODE = new Map(

@@ -6,7 +6,7 @@ Shared SDK and integration helper repository for AxiomNode services and clients.
 ## Key paths
 - typescript/: primary SDK implementation
 - python/ and kotlin/: language scaffolds/docs
-- openapi/: sources for generation
+- openapi/: reserved OpenAPI sources for future generation work
 - tooling/: generation, validation, packaging scripts
 
 ## Local commands
@@ -14,7 +14,7 @@ Shared SDK and integration helper repository for AxiomNode services and clients.
 
 ## CI/CD notes
 - validate-sdk-layout checks repository structure.
-- typescript-sdk-ci builds packages and publishes on version tags.
+- typescript-sdk-ci regenerates JSON Schema-derived contracts, builds packages, and publishes on version tags.
 
 ## LLM editing rules
 - Keep SDK behavior aligned with contracts-and-schemas versions.

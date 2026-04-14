@@ -12,8 +12,14 @@ Shared SDK repository for AxiomNode services and clients.
 
 - `typescript/`: production-ready SDK package.
 - `python/`, `kotlin/`: language-specific scaffolds and docs.
-- `openapi/`: API sources used for SDK generation.
+- `openapi/`: reserved OpenAPI sources and generation inputs for future SDK expansion.
 - `tooling/`: generation/build/publishing automation.
+
+## Contract sources
+
+- The current TypeScript SDK contract generation is driven by `contracts-and-schemas/schemas/json`.
+- `openapi/` is not yet wired into the TypeScript build pipeline.
+- Static catalogs exported by the TypeScript SDK are validated against generated JSON Schema contracts during build.
 
 ## Workflows
 
