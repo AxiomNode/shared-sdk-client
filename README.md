@@ -30,7 +30,7 @@ Shared SDK repository for AxiomNode services and clients.
 - `typescript-sdk-ci.yml`
 	- Trigger: push (`main`, `develop`), pull request, manual dispatch, and tags `typescript-sdk-v*`.
 	- Jobs:
-		- build TypeScript SDK
+		- build TypeScript SDK and run production `npm audit --omit=dev --audit-level=high`
 		- package `.tgz` artifact
 		- publish to npm when tag matches `typescript-sdk-v*`
 
