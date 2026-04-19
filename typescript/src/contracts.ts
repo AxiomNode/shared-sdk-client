@@ -15,6 +15,7 @@ export const RandomGameQuerySchema = z.object({
 export const GenerateGameRequestSchema = z.object({
   language: z.string().default("es"),
   categoryId: z.string().min(1).optional(),
+  categoryName: z.string().min(1).optional(),
   numQuestions: z.coerce.number().int().positive().max(50).optional(),
   difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
   letters: z.string().optional(),

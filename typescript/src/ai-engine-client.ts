@@ -44,9 +44,16 @@ export interface AiEngineClientConfig {
   AI_ENGINE_API_KEY?: string;
   AI_ENGINE_INGEST_API_KEY?: string;
   AI_ENGINE_REQUEST_TIMEOUT_MS: number;
+  AI_ENGINE_RETRY_MAX_ATTEMPTS?: number;
+  AI_ENGINE_RETRY_INITIAL_DELAY_MS?: number;
+  AI_ENGINE_RETRY_MAX_DELAY_MS?: number;
 }
 
 export class AiEngineClient {
+  private static readonly DEFAULT_RETRY_MAX_ATTEMPTS = 8;
+  private static readonly DEFAULT_RETRY_INITIAL_DELAY_MS = 5000;
+  private static readonly DEFAULT_RETRY_MAX_DELAY_MS = 30000;
+
   constructor(
     private readonly config: AiEngineClientConfig,
     private readonly observer?: AiEngineClientObserver
@@ -169,28 +176,101 @@ export class AiEngineClient {
     requestInit: RequestInit,
     operation: OutboundRequestMetric["operation"] = "generate"
   ): Promise<unknown> {
-    const startedAt = Date.now();
     const requestBytes =
       typeof requestInit.body === "string" ? Buffer.byteLength(requestInit.body, "utf8") : 0;
-    const response = await fetch(url, {
-      ...requestInit,
-      signal: AbortSignal.timeout(this.config.AI_ENGINE_REQUEST_TIMEOUT_MS)
-    });
-    const data = await response.json().catch(() => ({}));
-    const responseText = JSON.stringify(data);
-    this.observer?.onOutboundRequest({
-      operation,
-      statusCode: response.status,
-      durationMs: Date.now() - startedAt,
-      requestBytes,
-      responseBytes: Buffer.byteLength(responseText, "utf8"),
-      success: response.ok
-    });
+    const maxAttempts = this.resolveRetryMaxAttempts();
+    let lastError: Error | null = null;
 
-    if (!response.ok) {
-      throw new Error(`ai-engine error ${response.status}: ${JSON.stringify(data)}`);
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      const startedAt = Date.now();
+      try {
+        const response = await fetch(url, {
+          ...requestInit,
+          signal: AbortSignal.timeout(this.config.AI_ENGINE_REQUEST_TIMEOUT_MS)
+        });
+        const data = await response.json().catch(() => ({}));
+        const responseText = JSON.stringify(data);
+        this.observer?.onOutboundRequest({
+          operation,
+          statusCode: response.status,
+          durationMs: Date.now() - startedAt,
+          requestBytes,
+          responseBytes: Buffer.byteLength(responseText, "utf8"),
+          success: response.ok
+        });
+
+        if (response.ok) {
+          return data;
+        }
+
+        lastError = new Error(`ai-engine error ${response.status}: ${JSON.stringify(data)}`);
+        if (!this.isRetryableStatus(response.status) || attempt >= maxAttempts) {
+          throw lastError;
+        }
+      } catch (error) {
+        if (error instanceof Error && error.name === "TimeoutError") {
+          this.observer?.onOutboundRequest({
+            operation,
+            statusCode: 0,
+            durationMs: Date.now() - startedAt,
+            requestBytes,
+            responseBytes: 0,
+            success: false
+          });
+        } else if (error instanceof Error && /fetch failed/i.test(error.message)) {
+          this.observer?.onOutboundRequest({
+            operation,
+            statusCode: 0,
+            durationMs: Date.now() - startedAt,
+            requestBytes,
+            responseBytes: 0,
+            success: false
+          });
+        }
+
+        if (error instanceof Error) {
+          lastError = error;
+        } else {
+          lastError = new Error(String(error));
+        }
+
+        if (!this.isRetryableTransportError(lastError) || attempt >= maxAttempts) {
+          throw lastError;
+        }
+      }
+
+      await this.sleep(this.computeRetryDelayMs(attempt));
     }
 
-    return data;
+    throw lastError ?? new Error("ai-engine request failed without details");
+  }
+
+  private resolveRetryMaxAttempts(): number {
+    return Math.max(1, this.config.AI_ENGINE_RETRY_MAX_ATTEMPTS ?? AiEngineClient.DEFAULT_RETRY_MAX_ATTEMPTS);
+  }
+
+  private computeRetryDelayMs(attempt: number): number {
+    const initialDelay = Math.max(
+      0,
+      this.config.AI_ENGINE_RETRY_INITIAL_DELAY_MS ?? AiEngineClient.DEFAULT_RETRY_INITIAL_DELAY_MS
+    );
+    const maxDelay = Math.max(
+      initialDelay,
+      this.config.AI_ENGINE_RETRY_MAX_DELAY_MS ?? AiEngineClient.DEFAULT_RETRY_MAX_DELAY_MS
+    );
+    const delay = initialDelay * Math.pow(2, Math.max(0, attempt - 1));
+    return Math.min(delay, maxDelay);
+  }
+
+  private isRetryableStatus(statusCode: number): boolean {
+    return [429, 500, 502, 503, 504].includes(statusCode);
+  }
+
+  private isRetryableTransportError(error: Error): boolean {
+    return error.name === "TimeoutError" || /fetch failed/i.test(error.message);
+  }
+
+  private async sleep(delayMs: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
 }

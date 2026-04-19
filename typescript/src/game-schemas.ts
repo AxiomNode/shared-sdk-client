@@ -13,6 +13,7 @@ import { z } from "zod";
  */
 export const BaseGenerateSchema = z.object({
   categoryId: z.string().min(1),
+  categoryName: z.string().min(1).optional(),
   language: z.string().min(2).max(5),
   difficultyPercentage: z.number().int().min(0).max(100).optional(),
   numQuestions: z.number().int().min(1).max(50).optional(),
