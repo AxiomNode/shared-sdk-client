@@ -36,6 +36,10 @@ export interface CatalogsResponse {
   languages: CatalogLanguage[];
 }
 
+export interface GetCatalogsOptions {
+  forceRefresh?: boolean;
+}
+
 export interface AiEngineClientConfig {
   AI_ENGINE_BASE_URL: string;
   AI_ENGINE_GENERATION_ENDPOINT: string;
@@ -44,15 +48,25 @@ export interface AiEngineClientConfig {
   AI_ENGINE_API_KEY?: string;
   AI_ENGINE_INGEST_API_KEY?: string;
   AI_ENGINE_REQUEST_TIMEOUT_MS: number;
+  AI_ENGINE_CATALOGS_CACHE_TTL_MS?: number;
   AI_ENGINE_RETRY_MAX_ATTEMPTS?: number;
   AI_ENGINE_RETRY_INITIAL_DELAY_MS?: number;
   AI_ENGINE_RETRY_MAX_DELAY_MS?: number;
 }
 
 export class AiEngineClient {
+  private static readonly DEFAULT_CATALOGS_CACHE_TTL_MS = 60_000;
   private static readonly DEFAULT_RETRY_MAX_ATTEMPTS = 8;
   private static readonly DEFAULT_RETRY_INITIAL_DELAY_MS = 5000;
   private static readonly DEFAULT_RETRY_MAX_DELAY_MS = 30000;
+
+  private catalogsCache:
+    | {
+        payload: CatalogsResponse;
+        expiresAt: number;
+      }
+    | undefined;
+  private catalogsRequest: Promise<CatalogsResponse> | undefined;
 
   constructor(
     private readonly config: AiEngineClientConfig,
@@ -114,48 +128,41 @@ export class AiEngineClient {
     throw new Error(`ai-engine ingest error: unexpected response ${JSON.stringify(data)}`);
   }
 
-  async getCatalogs(): Promise<CatalogsResponse> {
+  async getCatalogs(options: GetCatalogsOptions = {}): Promise<CatalogsResponse> {
+    const now = Date.now();
+    if (!options.forceRefresh && this.catalogsCache && this.catalogsCache.expiresAt > now) {
+      return this.catalogsCache.payload;
+    }
+
+    if (this.catalogsRequest) {
+      return this.catalogsRequest;
+    }
+
     const endpoint = `${this.config.AI_ENGINE_BASE_URL}${this.config.AI_ENGINE_CATALOGS_ENDPOINT}`;
-    const data = await this.requestJson(
+    const request = this.requestJson(
       endpoint,
       {
         method: "GET",
         headers: this.buildHeaders(this.config.AI_ENGINE_API_KEY)
       },
       "catalogs"
-    );
+    )
+      .then((data) => {
+        const payload = this.parseCatalogsResponse(data);
+        this.catalogsCache = {
+          payload,
+          expiresAt: Date.now() + this.resolveCatalogsCacheTtlMs()
+        };
+        return payload;
+      })
+      .finally(() => {
+        if (this.catalogsRequest === request) {
+          this.catalogsRequest = undefined;
+        }
+      });
 
-    if (
-      typeof data === "object" &&
-      data !== null &&
-      Array.isArray((data as { categories?: unknown[] }).categories) &&
-      Array.isArray((data as { languages?: unknown[] }).languages)
-    ) {
-      const categories = ((data as { categories: unknown[] }).categories ?? []).filter(
-        (item): item is CatalogCategory =>
-          typeof item === "object" &&
-          item !== null &&
-          "id" in item &&
-          typeof item.id === "string" &&
-          "name" in item &&
-          typeof item.name === "string"
-      );
-      const languages = ((data as { languages: unknown[] }).languages ?? []).filter(
-        (item): item is CatalogLanguage =>
-          typeof item === "object" &&
-          item !== null &&
-          "code" in item &&
-          typeof item.code === "string" &&
-          "name" in item &&
-          typeof item.name === "string"
-      );
-
-      if (categories.length > 0 && languages.length > 0) {
-        return { categories, languages };
-      }
-    }
-
-    throw new Error(`ai-engine catalogs error: unexpected response ${JSON.stringify(data)}`);
+    this.catalogsRequest = request;
+    return request;
   }
 
   private buildHeaders(
@@ -247,6 +254,47 @@ export class AiEngineClient {
 
   private resolveRetryMaxAttempts(): number {
     return Math.max(1, this.config.AI_ENGINE_RETRY_MAX_ATTEMPTS ?? AiEngineClient.DEFAULT_RETRY_MAX_ATTEMPTS);
+  }
+
+  private resolveCatalogsCacheTtlMs(): number {
+    return Math.max(
+      0,
+      this.config.AI_ENGINE_CATALOGS_CACHE_TTL_MS ?? AiEngineClient.DEFAULT_CATALOGS_CACHE_TTL_MS
+    );
+  }
+
+  private parseCatalogsResponse(data: unknown): CatalogsResponse {
+    if (
+      typeof data === "object" &&
+      data !== null &&
+      Array.isArray((data as { categories?: unknown[] }).categories) &&
+      Array.isArray((data as { languages?: unknown[] }).languages)
+    ) {
+      const categories = ((data as { categories: unknown[] }).categories ?? []).filter(
+        (item): item is CatalogCategory =>
+          typeof item === "object" &&
+          item !== null &&
+          "id" in item &&
+          typeof item.id === "string" &&
+          "name" in item &&
+          typeof item.name === "string"
+      );
+      const languages = ((data as { languages: unknown[] }).languages ?? []).filter(
+        (item): item is CatalogLanguage =>
+          typeof item === "object" &&
+          item !== null &&
+          "code" in item &&
+          typeof item.code === "string" &&
+          "name" in item &&
+          typeof item.name === "string"
+      );
+
+      if (categories.length > 0 && languages.length > 0) {
+        return { categories, languages };
+      }
+    }
+
+    throw new Error(`ai-engine catalogs error: unexpected response ${JSON.stringify(data)}`);
   }
 
   private computeRetryDelayMs(attempt: number): number {

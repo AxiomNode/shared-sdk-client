@@ -9,13 +9,15 @@ import { z } from "zod";
 
 /**
  * Base generate schema shared by all game types.
- * Word-pass extends this with `letters`.
+ * `itemCount` is the canonical item request size, while `numQuestions`
+ * remains as a compatibility alias for older callers.
  */
 export const BaseGenerateSchema = z.object({
   categoryId: z.string().min(1),
   categoryName: z.string().min(1).optional(),
   language: z.string().min(2).max(5),
   difficultyPercentage: z.number().int().min(0).max(100).optional(),
+  itemCount: z.number().int().min(1).max(50).optional(),
   numQuestions: z.number().int().min(1).max(50).optional(),
   requestedBy: z.enum(["api", "backoffice"]).optional(),
 });
@@ -50,9 +52,12 @@ export const RandomModelsQuerySchema = z.object({
 
 export const HistoryQuerySchema = z.object({
   limit: z.coerce.number().int().min(1).max(1000).default(20),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(200).default(20),
   categoryId: z.string().min(1).optional(),
   language: z.string().min(2).max(5).optional(),
   difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
+  status: z.string().min(1).optional(),
 });
 
 // -- Generation process params ---------------------------------------------
@@ -73,6 +78,8 @@ export const GenerationProcessesListQuerySchema = z.object({
 
 // -- Manual history --------------------------------------------------------
 
+export const ReviewStatusSchema = z.enum(["manual", "validated", "pending_review"]);
+
 export const ManualHistoryEntrySchema = z.object({
   categoryId: z.string().min(1),
   language: z.string().min(2).max(5),
@@ -80,7 +87,19 @@ export const ManualHistoryEntrySchema = z.object({
   content: z.record(z.unknown()).refine((value) => Object.keys(value).length > 0, {
     message: "content must include at least one field",
   }),
-  status: z.enum(["manual", "validated"]).default("manual"),
+  status: ReviewStatusSchema.default("manual"),
+});
+
+export const ManualHistoryUpdateSchema = z.object({
+  categoryId: z.string().min(1).optional(),
+  language: z.string().min(2).max(5).optional(),
+  difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
+  content: z.record(z.unknown()).refine((value) => Object.keys(value).length > 0, {
+    message: "content must include at least one field",
+  }).optional(),
+  status: ReviewStatusSchema.optional(),
+}).refine((value) => Object.keys(value).length > 0, {
+  message: "at least one field must be provided",
 });
 
 export const HistoryItemParamsSchema = z.object({
@@ -97,5 +116,7 @@ export type HistoryQuery = z.infer<typeof HistoryQuerySchema>;
 export type GenerationProcessParams = z.infer<typeof GenerationProcessParamsSchema>;
 export type GenerationProcessQuery = z.infer<typeof GenerationProcessQuerySchema>;
 export type GenerationProcessesListQuery = z.infer<typeof GenerationProcessesListQuerySchema>;
+export type ReviewStatus = z.infer<typeof ReviewStatusSchema>;
 export type ManualHistoryEntry = z.infer<typeof ManualHistoryEntrySchema>;
+export type ManualHistoryUpdate = z.infer<typeof ManualHistoryUpdateSchema>;
 export type HistoryItemParams = z.infer<typeof HistoryItemParamsSchema>;
