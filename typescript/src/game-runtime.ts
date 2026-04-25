@@ -352,3 +352,20 @@ export function extractStringArrayFromObjects(
     })
     .filter((item) => item.trim().length > 0);
 }
+
+export function normalizeManualContent(
+  content: Record<string, unknown>,
+): Record<string, unknown> {
+  const entries = Object.entries(content).filter(([, value]) => value !== null && value !== undefined);
+  if (entries.length === 0) {
+    throw new Error("Invalid content payload");
+  }
+
+  const compact = Object.fromEntries(entries);
+  const serialized = stableStringify(compact);
+  if (serialized.length < 8) {
+    throw new Error("Invalid content payload");
+  }
+
+  return compact;
+}
