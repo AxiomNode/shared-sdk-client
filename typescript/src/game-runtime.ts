@@ -152,3 +152,22 @@ export function mapStoredHistoryModels<TModel extends StoredGameModelLike>(
 ): TModel[] {
   return items.map((item) => mapItem(item));
 }
+
+export function extractDifficultyFromRequest(requestPayload: unknown): number | undefined {
+  if (!requestPayload || typeof requestPayload !== "object") {
+    return undefined;
+  }
+
+  const raw = (requestPayload as Record<string, unknown>).difficulty_percentage;
+  if (typeof raw === "number" && Number.isFinite(raw)) {
+    return Math.max(0, Math.min(100, Math.trunc(raw)));
+  }
+  if (typeof raw === "string") {
+    const parsed = Number(raw);
+    if (Number.isFinite(parsed)) {
+      return Math.max(0, Math.min(100, Math.trunc(parsed)));
+    }
+  }
+
+  return undefined;
+}
