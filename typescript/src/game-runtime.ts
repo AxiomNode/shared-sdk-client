@@ -369,3 +369,23 @@ export function normalizeManualContent(
 
   return compact;
 }
+
+export function parseJson(value: string): unknown {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+export function pickRange(min: number, max: number): number {
+  const lower = Math.min(min, max);
+  const upper = Math.max(min, max);
+  return Math.floor(Math.random() * (upper - lower + 1)) + lower;
+}
+
+export function resolveRequestedItemCount(
+  input: { itemCount?: number; numQuestions?: number },
+): number | undefined {
+  return input.itemCount ?? input.numQuestions;
+}
