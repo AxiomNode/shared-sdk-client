@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+const QueryBoolean = z.preprocess((value) => {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["true", "1", "yes", "on"].includes(normalized)) {
+      return true;
+    }
+    if (["false", "0", "no", "off", ""].includes(normalized)) {
+      return false;
+    }
+  }
+
+  return value;
+}, z.boolean());
+
 // ---------------------------------------------------------------------------
 // Shared Zod schemas for game microservices (quizz & wordpass).
 // Single source of truth for all game-related contracts. English-only.
@@ -74,7 +88,7 @@ export const GenerationProcessParamsSchema = z.object({
 });
 
 export const GenerationProcessQuerySchema = z.object({
-  includeItems: z.coerce.boolean().default(false),
+  includeItems: QueryBoolean.default(false),
 });
 
 export const GenerationProcessesListQuerySchema = z.object({
