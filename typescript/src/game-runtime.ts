@@ -280,3 +280,42 @@ export function ensureAiAuthCircuitClosedState(
     blockedUntilMs: state.openedUntilMs,
   };
 }
+
+export function normalizeContentToken(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value);
+  }
+
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stableStringify(item)).join(",")}]`;
+  }
+
+  const entries = Object.entries(value as Record<string, unknown>).sort(([a], [b]) =>
+    a.localeCompare(b)
+  );
+  const body = entries
+    .map(([key, item]) => `${JSON.stringify(key)}:${stableStringify(item)}`)
+    .join(",");
+  return `{${body}}`;
+}
+
+export function getGameCategoryOrThrow(
+  categoryById: Map<string, GameCategoryRef>,
+  categoryId: string,
+): GameCategoryRef {
+  const category = categoryById.get(categoryId);
+  if (!category) {
+    throw new Error(`Unsupported categoryId: ${categoryId}`);
+  }
+  return category;
+}
