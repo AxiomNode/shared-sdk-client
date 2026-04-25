@@ -2,25 +2,26 @@ import { z } from "zod";
 
 // ---------------------------------------------------------------------------
 // Shared Zod schemas for game microservices (quizz & wordpass).
-// Centralised here to avoid duplication across microservice route files.
+// Single source of truth for all game-related contracts. English-only.
 // ---------------------------------------------------------------------------
 
 // -- Generation ------------------------------------------------------------
 
-/**
- * Base generate schema shared by all game types.
- * `itemCount` is the canonical item request size, while `numQuestions`
- * remains as a compatibility alias for older callers.
- */
 export const BaseGenerateSchema = z.object({
   categoryId: z.string().min(1),
   categoryName: z.string().min(1).optional(),
-  language: z.string().min(2).max(5),
   difficultyPercentage: z.number().int().min(0).max(100).optional(),
   itemCount: z.number().int().min(1).max(50).optional(),
-  numQuestions: z.number().int().min(1).max(50).optional(),
   requestedBy: z.enum(["api", "backoffice"]).optional(),
 });
+
+export const GenerateGameRequestSchema = z.object({
+  categoryId: z.string().min(1).optional(),
+  categoryName: z.string().min(1).optional(),
+  itemCount: z.coerce.number().int().positive().max(50).optional(),
+  difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
+  requestedBy: z.enum(["api", "backoffice"]).optional(),
+}).strict();
 
 // -- Ingest ----------------------------------------------------------------
 
@@ -34,16 +35,18 @@ export const IngestSchema = z.object({
   documents: z.array(IngestDocumentSchema).min(1),
   source: z.string().min(1).optional(),
   categoryId: z.string().min(1).optional(),
-  language: z.string().min(2).max(5).optional(),
   difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
 });
 
 // -- Query / list ----------------------------------------------------------
 
+export const RandomGameQuerySchema = z.object({
+  categoryId: z.string().min(1).optional(),
+}).strict();
+
 export const RandomModelsQuerySchema = z.object({
   count: z.coerce.number().int().min(1).max(100).default(5),
   categoryId: z.string().min(1).optional(),
-  language: z.string().min(2).max(5).optional(),
   difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
   status: z.string().min(1).optional(),
   createdAfter: z.coerce.date().optional(),
@@ -55,10 +58,14 @@ export const HistoryQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(20),
   categoryId: z.string().min(1).optional(),
-  language: z.string().min(2).max(5).optional(),
   difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
   status: z.string().min(1).optional(),
 });
+
+export const LeaderboardQuerySchema = z.object({
+  metric: z.enum(["won", "score", "played"]).optional(),
+  limit: z.coerce.number().int().positive().max(100).optional(),
+}).strict();
 
 // -- Generation process params ---------------------------------------------
 
@@ -82,7 +89,6 @@ export const ReviewStatusSchema = z.enum(["manual", "validated", "pending_review
 
 export const ManualHistoryEntrySchema = z.object({
   categoryId: z.string().min(1),
-  language: z.string().min(2).max(5),
   difficultyPercentage: z.coerce.number().int().min(0).max(100),
   content: z.record(z.unknown()).refine((value) => Object.keys(value).length > 0, {
     message: "content must include at least one field",
@@ -92,7 +98,6 @@ export const ManualHistoryEntrySchema = z.object({
 
 export const ManualHistoryUpdateSchema = z.object({
   categoryId: z.string().min(1).optional(),
-  language: z.string().min(2).max(5).optional(),
   difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
   content: z.record(z.unknown()).refine((value) => Object.keys(value).length > 0, {
     message: "content must include at least one field",
@@ -106,13 +111,25 @@ export const HistoryItemParamsSchema = z.object({
   entryId: z.string().min(1),
 });
 
+// -- Categories catalog ----------------------------------------------------
+
+export const GameCategoriesSchema = z.object({
+  categories: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+  }).strict()).min(1),
+}).strict();
+
 // -- Inferred types --------------------------------------------------------
 
 export type BaseGenerate = z.infer<typeof BaseGenerateSchema>;
+export type GenerateGameRequest = z.infer<typeof GenerateGameRequestSchema>;
 export type IngestDocument = z.infer<typeof IngestDocumentSchema>;
 export type Ingest = z.infer<typeof IngestSchema>;
+export type RandomGameQuery = z.infer<typeof RandomGameQuerySchema>;
 export type RandomModelsQuery = z.infer<typeof RandomModelsQuerySchema>;
 export type HistoryQuery = z.infer<typeof HistoryQuerySchema>;
+export type LeaderboardQuery = z.infer<typeof LeaderboardQuerySchema>;
 export type GenerationProcessParams = z.infer<typeof GenerationProcessParamsSchema>;
 export type GenerationProcessQuery = z.infer<typeof GenerationProcessQuerySchema>;
 export type GenerationProcessesListQuery = z.infer<typeof GenerationProcessesListQuerySchema>;
@@ -120,3 +137,4 @@ export type ReviewStatus = z.infer<typeof ReviewStatusSchema>;
 export type ManualHistoryEntry = z.infer<typeof ManualHistoryEntrySchema>;
 export type ManualHistoryUpdate = z.infer<typeof ManualHistoryUpdateSchema>;
 export type HistoryItemParams = z.infer<typeof HistoryItemParamsSchema>;
+export type GameCategories = z.infer<typeof GameCategoriesSchema>;

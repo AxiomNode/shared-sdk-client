@@ -19,19 +19,11 @@
       "types": "./dist/proxy.d.ts",
       "default": "./dist/proxy.js"
     },
-    "./contracts": {
-      "types": "./dist/contracts.d.ts",
-      "default": "./dist/contracts.js"
-    },
     "./ai-engine-client": {
       "types": "./dist/ai-engine-client.d.ts",
       "default": "./dist/ai-engine-client.js"
     },
     "./game-categories": {
-      "types": "./dist/game-categories.d.ts",
-      "default": "./dist/game-categories.js"
-    },
-    "./trivia-categories": {
       "types": "./dist/game-categories.d.ts",
       "default": "./dist/game-categories.js"
     },
@@ -41,8 +33,7 @@
     }
   },
   "scripts": {
-    "generate:contracts": "node scripts/generate-contracts.mjs",
-    "build": "npm run generate:contracts && tsc -p tsconfig.json"
+    "build": "tsc -p tsconfig.json"
   },
   "dependencies": {
     "zod": "^3.23.8"

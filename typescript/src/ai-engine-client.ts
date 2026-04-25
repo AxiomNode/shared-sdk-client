@@ -26,14 +26,8 @@ export interface CatalogCategory {
   name: string;
 }
 
-export interface CatalogLanguage {
-  code: string;
-  name: string;
-}
-
 export interface CatalogsResponse {
   categories: CatalogCategory[];
-  languages: CatalogLanguage[];
 }
 
 export interface GetCatalogsOptions {
@@ -267,8 +261,7 @@ export class AiEngineClient {
     if (
       typeof data === "object" &&
       data !== null &&
-      Array.isArray((data as { categories?: unknown[] }).categories) &&
-      Array.isArray((data as { languages?: unknown[] }).languages)
+      Array.isArray((data as { categories?: unknown[] }).categories)
     ) {
       const categories = ((data as { categories: unknown[] }).categories ?? []).filter(
         (item): item is CatalogCategory =>
@@ -279,18 +272,9 @@ export class AiEngineClient {
           "name" in item &&
           typeof item.name === "string"
       );
-      const languages = ((data as { languages: unknown[] }).languages ?? []).filter(
-        (item): item is CatalogLanguage =>
-          typeof item === "object" &&
-          item !== null &&
-          "code" in item &&
-          typeof item.code === "string" &&
-          "name" in item &&
-          typeof item.name === "string"
-      );
 
-      if (categories.length > 0 && languages.length > 0) {
-        return { categories, languages };
+      if (categories.length > 0) {
+        return { categories };
       }
     }
 

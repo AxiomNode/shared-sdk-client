@@ -1,4 +1,3 @@
-export * from "./contracts.js";
 export * from "./game-schemas.js";
 export * from "./proxy.js";
 export * from "./ai-engine-client.js";
