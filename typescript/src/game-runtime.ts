@@ -32,6 +32,17 @@ export interface StoredGameModelLike {
   responseValidationError?: string;
 }
 
+export interface AiAuthCircuitState {
+  failureStreak: number;
+  openedUntilMs: number;
+  openedTotal: number;
+}
+
+export interface AiAuthCircuitTransition {
+  state: AiAuthCircuitState;
+  shouldEmit: boolean;
+}
+
 export function buildCategoryDimensionMatrix(
   categories: GameCategoryRef[],
 ): GameCategoryDimension[] {
@@ -188,4 +199,47 @@ export function extractAiEngineStatusCode(error: unknown): number | null {
 
 export function isAiAuthCircuitOpenError(error: unknown): boolean {
   return error instanceof Error && /ai auth circuit open/i.test(error.message);
+}
+
+export function registerAiAuthSuccessState(
+  state: AiAuthCircuitState,
+): AiAuthCircuitTransition {
+  const shouldEmit = state.failureStreak > 0 || state.openedUntilMs > 0;
+  return {
+    state: {
+      ...state,
+      failureStreak: 0,
+      openedUntilMs: 0,
+    },
+    shouldEmit,
+  };
+}
+
+export function registerAiAuthFailureState(
+  state: AiAuthCircuitState,
+  options: {
+    statusCode: number | null;
+    failureThreshold: number;
+    cooldownMs: number;
+    nowMs: number;
+  },
+): AiAuthCircuitTransition {
+  if (options.statusCode !== 401 && options.statusCode !== 403) {
+    return {
+      state,
+      shouldEmit: false,
+    };
+  }
+
+  const failureStreak = state.failureStreak + 1;
+  const shouldOpenCircuit = failureStreak >= options.failureThreshold;
+
+  return {
+    state: {
+      failureStreak,
+      openedUntilMs: shouldOpenCircuit ? options.nowMs + options.cooldownMs : state.openedUntilMs,
+      openedTotal: shouldOpenCircuit ? state.openedTotal + 1 : state.openedTotal,
+    },
+    shouldEmit: true,
+  };
 }
