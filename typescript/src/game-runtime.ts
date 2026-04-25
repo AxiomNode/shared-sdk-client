@@ -43,6 +43,12 @@ export interface AiAuthCircuitTransition {
   shouldEmit: boolean;
 }
 
+export interface AiAuthCircuitClosedCheck {
+  state: AiAuthCircuitState;
+  shouldEmit: boolean;
+  blockedUntilMs: number | null;
+}
+
 export function buildCategoryDimensionMatrix(
   categories: GameCategoryRef[],
 ): GameCategoryDimension[] {
@@ -241,5 +247,36 @@ export function registerAiAuthFailureState(
       openedTotal: shouldOpenCircuit ? state.openedTotal + 1 : state.openedTotal,
     },
     shouldEmit: true,
+  };
+}
+
+export function ensureAiAuthCircuitClosedState(
+  state: AiAuthCircuitState,
+  nowMs: number,
+): AiAuthCircuitClosedCheck {
+  if (state.openedUntilMs <= 0) {
+    return {
+      state,
+      shouldEmit: false,
+      blockedUntilMs: null,
+    };
+  }
+
+  if (nowMs >= state.openedUntilMs) {
+    return {
+      state: {
+        ...state,
+        failureStreak: 0,
+        openedUntilMs: 0,
+      },
+      shouldEmit: true,
+      blockedUntilMs: null,
+    };
+  }
+
+  return {
+    state,
+    shouldEmit: false,
+    blockedUntilMs: state.openedUntilMs,
   };
 }
