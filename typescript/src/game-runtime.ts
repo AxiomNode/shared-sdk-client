@@ -3,6 +3,16 @@ export interface GameCategoryRef {
   name: string;
 }
 
+export interface GameCategoryDimension {
+  category: GameCategoryRef;
+}
+
+export function buildCategoryDimensionMatrix(
+  categories: GameCategoryRef[],
+): GameCategoryDimension[] {
+  return categories.map((category) => ({ category }));
+}
+
 export function buildStoredRequestPayload(
   requestPayload: Record<string, string>,
   category: GameCategoryRef,
