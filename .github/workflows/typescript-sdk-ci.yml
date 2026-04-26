@@ -48,6 +48,7 @@ jobs:
     if: startsWith(github.ref, 'refs/tags/typescript-sdk-v')
     needs: build-typescript-sdk
     runs-on: ubuntu-latest
+    environment: npm-publish
     defaults:
       run:
         working-directory: typescript
