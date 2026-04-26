@@ -4,6 +4,7 @@ export * from "./ai-engine-client.js";
 export * from "./game-categories.js";
 export * from "./game-config.js";
 export * from "./game-generation-process.js";
+export * from "./game-history.js";
 export * from "./game-model-generation-job.js";
 export * from "./game-monitoring.js";
 export * from "./game-routes.js";
