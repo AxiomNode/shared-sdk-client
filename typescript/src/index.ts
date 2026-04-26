@@ -3,6 +3,7 @@ export * from "./proxy.js";
 export * from "./ai-engine-client.js";
 export * from "./game-categories.js";
 export * from "./game-config.js";
+export * from "./game-content-models.js";
 export * from "./game-generation-process.js";
 export * from "./game-grouped-summary.js";
 export * from "./game-history.js";
