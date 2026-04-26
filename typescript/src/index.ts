@@ -8,6 +8,7 @@ export * from "./game-grouped-summary.js";
 export * from "./game-history.js";
 export * from "./game-model-generation-job.js";
 export * from "./game-monitoring.js";
+export * from "./game-random-models.js";
 export * from "./game-routes.js";
 export * from "./game-server.js";
 export * from "./game-runtime-generation-worker.js";
