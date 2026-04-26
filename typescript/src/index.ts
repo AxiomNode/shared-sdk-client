@@ -5,6 +5,7 @@ export * from "./game-categories.js";
 export * from "./game-config.js";
 export * from "./game-model-generation-job.js";
 export * from "./game-monitoring.js";
+export * from "./game-routes.js";
 export * from "./game-server.js";
 export * from "./game-runtime-generation-worker.js";
 export * from "./game-runtime.js";
