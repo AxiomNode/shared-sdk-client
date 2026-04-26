@@ -8,6 +8,8 @@ on:
   pull_request:
   workflow_dispatch:
 
+# Workflow-level permissions are intentionally minimal because this job only
+# inspects the repository layout and never publishes or mutates external state.
 permissions:
   contents: read
 
