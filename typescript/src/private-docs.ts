@@ -1,4 +1,9 @@
+import swaggerUi from "@fastify/swagger-ui";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
+
 export interface PrivateDocsTokenConfig {
+  PRIVATE_DOCS_ENABLED?: boolean;
+  PRIVATE_DOCS_PREFIX?: string;
   PRIVATE_DOCS_TOKEN?: string | null;
   AI_ENGINE_API_KEY?: string | null;
 }
@@ -39,4 +44,32 @@ export function isAuthorizedForPrivateDocs(
   }
 
   return false;
+}
+
+export async function registerPrivateDocs(
+  app: FastifyInstance,
+  config: PrivateDocsTokenConfig
+): Promise<void> {
+  if (!config.PRIVATE_DOCS_ENABLED) {
+    return;
+  }
+
+  const privateDocsToken = resolvePrivateDocsToken(config, { fallbackToAiEngineKey: true });
+  if (!privateDocsToken) {
+    throw new Error("Private docs are enabled but no token is configured");
+  }
+
+  await app.register(swaggerUi, {
+    routePrefix: config.PRIVATE_DOCS_PREFIX ?? "/private/docs",
+    staticCSP: true,
+    transformSpecificationClone: true,
+    uiHooks: {
+      onRequest: async (request: FastifyRequest, reply: FastifyReply) => {
+        if (!isAuthorizedForPrivateDocs(request.headers, privateDocsToken)) {
+          return reply.code(401).send({ message: "Unauthorized private docs access" });
+        }
+        return;
+      },
+    },
+  });
 }
