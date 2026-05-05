@@ -1,6 +1,14 @@
 # TypeScript SDK
 
+Last updated: 2026-05-03.
+
+## Purpose
+
 TypeScript client SDK for `api-gateway`, BFFs, and internal service integrations.
+
+## Scope
+
+Use this section for reusable TypeScript contracts and transport helpers consumed across runtime repositories.
 
 ## Modules
 
@@ -17,7 +25,7 @@ npm run build
 npm run generate:contracts
 ```
 
-## Goal
+## Why this matters
 
 Avoid contract/model and transport-helper duplication across runtime repositories.
 
