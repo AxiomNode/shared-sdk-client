@@ -34,6 +34,11 @@ export interface GetCatalogsOptions {
   forceRefresh?: boolean;
 }
 
+export interface AiEngineRequestOptions {
+  timeoutMs?: number;
+  maxAttempts?: number;
+}
+
 export interface AiEngineClientConfig {
   AI_ENGINE_BASE_URL: string;
   AI_ENGINE_GENERATION_ENDPOINT: string;
@@ -67,7 +72,7 @@ export class AiEngineClient {
     private readonly observer?: AiEngineClientObserver
   ) {}
 
-  async generate(params: Record<string, string>): Promise<unknown> {
+  async generate(params: Record<string, string>, options: AiEngineRequestOptions = {}): Promise<unknown> {
     const endpoint = `${this.config.AI_ENGINE_BASE_URL}${this.config.AI_ENGINE_GENERATION_ENDPOINT}`;
     const url = new URL(endpoint);
     Object.entries(params).forEach(([key, value]) => {
@@ -76,10 +81,15 @@ export class AiEngineClient {
       }
     });
 
-    return this.requestJson(url.toString(), {
-      method: "POST",
-      headers: this.buildHeaders(this.config.AI_ENGINE_API_KEY)
-    });
+    return this.requestJson(
+      url.toString(),
+      {
+        method: "POST",
+        headers: this.buildHeaders(this.config.AI_ENGINE_API_KEY)
+      },
+      "generate",
+      options
+    );
   }
 
   async ingest(documents: IngestDocumentInput[], source?: string): Promise<IngestResponse> {
@@ -175,11 +185,13 @@ export class AiEngineClient {
   private async requestJson(
     url: string,
     requestInit: RequestInit,
-    operation: OutboundRequestMetric["operation"] = "generate"
+    operation: OutboundRequestMetric["operation"] = "generate",
+    options: AiEngineRequestOptions = {}
   ): Promise<unknown> {
     const requestBytes =
       typeof requestInit.body === "string" ? Buffer.byteLength(requestInit.body, "utf8") : 0;
-    const maxAttempts = this.resolveRetryMaxAttempts();
+    const maxAttempts = this.resolveRetryMaxAttempts(options.maxAttempts);
+    const timeoutMs = options.timeoutMs ?? this.config.AI_ENGINE_REQUEST_TIMEOUT_MS;
     let lastError: Error | null = null;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -187,7 +199,7 @@ export class AiEngineClient {
       try {
         const response = await fetch(url, {
           ...requestInit,
-          signal: AbortSignal.timeout(this.config.AI_ENGINE_REQUEST_TIMEOUT_MS)
+          signal: AbortSignal.timeout(timeoutMs)
         });
         const data = await response.json().catch(() => ({}));
         const responseText = JSON.stringify(data);
@@ -246,8 +258,11 @@ export class AiEngineClient {
     throw lastError ?? new Error("ai-engine request failed without details");
   }
 
-  private resolveRetryMaxAttempts(): number {
-    return Math.max(1, this.config.AI_ENGINE_RETRY_MAX_ATTEMPTS ?? AiEngineClient.DEFAULT_RETRY_MAX_ATTEMPTS);
+  private resolveRetryMaxAttempts(maxAttempts?: number): number {
+    return Math.max(
+      1,
+      maxAttempts ?? this.config.AI_ENGINE_RETRY_MAX_ATTEMPTS ?? AiEngineClient.DEFAULT_RETRY_MAX_ATTEMPTS
+    );
   }
 
   private resolveCatalogsCacheTtlMs(): number {

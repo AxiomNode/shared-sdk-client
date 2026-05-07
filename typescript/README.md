@@ -20,10 +20,16 @@ Use this section for reusable TypeScript contracts and transport helpers consume
 ```bash
 npm install
 npm run build
+npm test
 
 # generate contracts from contracts-and-schemas
 npm run generate:contracts
 ```
+
+## Runtime helpers
+
+- `AiEngineClient.generate(params, options)` supports per-request `timeoutMs` and `maxAttempts` overrides.
+- `createGameConfigSchema` exposes `GAME_GENERATION_ITEM_TIMEOUT_MS` and `GAME_GENERATION_ITEM_RETRY_MAX_ATTEMPTS` for bounded async generation items.
 
 ## Why this matters
 

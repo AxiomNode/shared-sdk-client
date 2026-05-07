@@ -39,6 +39,8 @@ export function createGameConfigSchema(defaults: GameConfigDefaults) {
     AI_ENGINE_API_KEY: z.string().min(1).optional(),
     AI_ENGINE_INGEST_API_KEY: z.string().min(1).optional(),
     AI_ENGINE_REQUEST_TIMEOUT_MS: z.coerce.number().int().min(5000).max(1800000).default(420000),
+    GAME_GENERATION_ITEM_TIMEOUT_MS: z.coerce.number().int().min(5000).max(1800000).default(90000),
+    GAME_GENERATION_ITEM_RETRY_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(1),
     AI_ENGINE_RETRY_MAX_ATTEMPTS: z.coerce.number().int().min(1).max(10).default(8),
     AI_ENGINE_RETRY_INITIAL_DELAY_MS: z.coerce.number().int().min(0).max(60000).default(5000),
     AI_ENGINE_RETRY_MAX_DELAY_MS: z.coerce.number().int().min(0).max(300000).default(30000),
