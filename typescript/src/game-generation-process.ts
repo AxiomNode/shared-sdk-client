@@ -36,10 +36,16 @@ export interface GameGenerationProcessSnapshot<TItem = unknown> {
   };
   startedAt: string;
   updatedAt: string;
+  lastProgressAt: string;
+  ageSeconds: number;
+  idleSeconds: number;
+  stalled: boolean;
   finishedAt?: string;
   generatedItems?: TItem[];
   errors?: string[];
 }
+
+const STALLED_AFTER_SECONDS = 60;
 
 export interface GameGenerationProcessListOptions {
   limit?: number;
@@ -75,6 +81,11 @@ export function toGameGenerationProcessSnapshot<TItem = unknown>(
   includeItems = false
 ): GameGenerationProcessSnapshot<TItem> {
   const total = Math.max(1, task.requested);
+  const now = Date.now();
+  const startedAtMs = Date.parse(task.startedAt);
+  const updatedAtMs = Date.parse(task.updatedAt);
+  const ageSeconds = Math.max(0, Math.floor((now - startedAtMs) / 1000));
+  const idleSeconds = Math.max(0, Math.floor((now - updatedAtMs) / 1000));
 
   return {
     taskId: task.taskId,
@@ -95,6 +106,10 @@ export function toGameGenerationProcessSnapshot<TItem = unknown>(
     },
     startedAt: task.startedAt,
     updatedAt: task.updatedAt,
+    lastProgressAt: task.updatedAt,
+    ageSeconds,
+    idleSeconds,
+    stalled: task.status === "running" && idleSeconds >= STALLED_AFTER_SECONDS,
     ...(task.finishedAt ? { finishedAt: task.finishedAt } : {}),
     ...(includeItems ? { generatedItems: task.generatedItems } : {}),
     ...(task.errors.length > 0 ? { errors: task.errors } : {}),

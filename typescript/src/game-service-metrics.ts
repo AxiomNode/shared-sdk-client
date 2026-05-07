@@ -167,10 +167,11 @@ export class GameServiceMetrics<
     this.pushLog("info", "batch_generation_cycle", result as Record<string, unknown>);
   }
 
-  recordGenerationProcessStarted(requested: number): void {
+  recordGenerationProcessStarted(requested: number, taskId?: string): void {
     this.generationProcessesStartedTotal += 1;
     this.generationProcessesRequestedTotal += requested;
     this.pushLog("info", "generation_process_started", {
+      ...(taskId ? { taskId } : {}),
       requested,
     });
   }

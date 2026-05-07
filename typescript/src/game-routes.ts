@@ -77,8 +77,11 @@ export async function createGameRoutes<TGenerateSchema extends z.AnyZodObject>({
 }: CreateGameRoutesInput<TGenerateSchema>): Promise<void> {
   const GenerateSchema = generateSchema;
   const GenerateProcessSchema = GenerateSchema.extend({
-    count: z.number().int().min(1).max(100).default(10),
-  });
+    count: z.coerce.number().int().min(1).max(100).optional(),
+  }).transform((value) => ({
+    ...value,
+    count: value.count ?? value.itemCount ?? 10,
+  }));
   const GenerateProcessWaitSchema = GenerateProcessSchema;
 
   app.post("/games/generate", async (request, reply) => {
