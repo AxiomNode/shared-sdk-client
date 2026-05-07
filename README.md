@@ -1,6 +1,6 @@
 # shared-sdk-client
 
-Last updated: 2026-05-03.
+Last updated: 2026-05-08.
 
 Shared SDK repository for AxiomNode services and clients.
 
@@ -9,6 +9,8 @@ Shared SDK repository for AxiomNode services and clients.
 - Provide reusable client libraries and integration helpers.
 - Keep contracts, proxy helpers, and shared domain models in one place.
 - Reduce duplication across gateway, BFF, and microservice repositories.
+
+Current platform status: `contracts-and-schemas` remains the contract source of truth. SDK changes should follow contract updates and be coordinated with downstream service/client rollout windows.
 
 ## Runtime role
 
