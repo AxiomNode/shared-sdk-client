@@ -42,7 +42,7 @@ export const GenerateGameRequestSchema = z.object({
 export const IngestDocumentSchema = z.object({
   content: z.string().min(1),
   docId: z.string().min(1).optional(),
-  metadata: z.record(z.unknown()).optional(),
+  metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const IngestSchema = z.object({
@@ -104,7 +104,7 @@ export const ReviewStatusSchema = z.enum(["manual", "validated", "pending_review
 export const ManualHistoryEntrySchema = z.object({
   categoryId: z.string().min(1),
   difficultyPercentage: z.coerce.number().int().min(0).max(100),
-  content: z.record(z.unknown()).refine((value) => Object.keys(value).length > 0, {
+  content: z.record(z.string(), z.unknown()).refine((value) => Object.keys(value).length > 0, {
     message: "content must include at least one field",
   }),
   status: ReviewStatusSchema.default("manual"),
@@ -113,7 +113,7 @@ export const ManualHistoryEntrySchema = z.object({
 export const ManualHistoryUpdateSchema = z.object({
   categoryId: z.string().min(1).optional(),
   difficultyPercentage: z.coerce.number().int().min(0).max(100).optional(),
-  content: z.record(z.unknown()).refine((value) => Object.keys(value).length > 0, {
+  content: z.record(z.string(), z.unknown()).refine((value) => Object.keys(value).length > 0, {
     message: "content must include at least one field",
   }).optional(),
   status: ReviewStatusSchema.optional(),

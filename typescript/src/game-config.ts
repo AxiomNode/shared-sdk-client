@@ -63,16 +63,21 @@ export function createGameConfigSchema(defaults: GameConfigDefaults) {
   });
 }
 
-export function loadGameConfig<TConfig extends z.ZodTypeAny>(configSchema: TConfig): z.infer<TConfig> {
+export function loadGameConfig<TConfig extends z.ZodType>(configSchema: TConfig): z.infer<TConfig> {
   const parsed = configSchema.safeParse(process.env);
   if (!parsed.success) {
     throw new Error();
   }
 
+  const docsConfig = parsed.data as {
+    PRIVATE_DOCS_ENABLED?: unknown;
+    PRIVATE_DOCS_TOKEN?: unknown;
+    AI_ENGINE_API_KEY?: unknown;
+  };
   if (
-    parsed.data.PRIVATE_DOCS_ENABLED &&
-    !parsed.data.PRIVATE_DOCS_TOKEN &&
-    !parsed.data.AI_ENGINE_API_KEY
+    docsConfig.PRIVATE_DOCS_ENABLED &&
+    !docsConfig.PRIVATE_DOCS_TOKEN &&
+    !docsConfig.AI_ENGINE_API_KEY
   ) {
     throw new Error("Private docs require PRIVATE_DOCS_TOKEN or AI_ENGINE_API_KEY");
   }

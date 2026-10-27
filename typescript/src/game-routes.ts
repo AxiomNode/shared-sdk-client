@@ -50,7 +50,7 @@ type RuntimeGenerationWorkerLike = {
   stop(): Promise<unknown>;
 };
 
-type CreateGameRoutesInput<TGenerateSchema extends z.AnyZodObject> = {
+type CreateGameRoutesInput<TGenerateSchema extends z.ZodObject> = {
   app: FastifyInstance;
   gameType: string;
   generateSchema: TGenerateSchema;
@@ -66,7 +66,7 @@ const RuntimeGenerationStartSchema = z.object({
   difficultyLevels: z.array(z.enum(["easy", "medium", "hard"]).transform((value) => value as RuntimeDifficultyLevel)).max(3).optional(),
 });
 
-export async function createGameRoutes<TGenerateSchema extends z.AnyZodObject>({
+export async function createGameRoutes<TGenerateSchema extends z.ZodObject>({
   app,
   gameType,
   generateSchema,
