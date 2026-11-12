@@ -2,7 +2,7 @@ import { Agent, setGlobalDispatcher } from "undici";
 
 export type HeaderBag = Record<string, string | undefined>;
 
-export type ForwardMethod = "GET" | "POST" | "PATCH" | "DELETE";
+export type ForwardMethod = "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
 
 export interface ForwardHttpParams {
   targetUrl: string;
