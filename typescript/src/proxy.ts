@@ -114,41 +114,46 @@ export async function forwardHttp(params: ForwardHttpParams): Promise<ForwardHtt
   const controller = new AbortController();
   const timeoutHandle = setTimeout(() => controller.abort(), timeoutMs);
 
-  let response: Response;
+  // The timer must stay armed until the body is fully consumed: fetch() resolves
+  // as soon as headers arrive, so clearing it earlier would let a stalled body
+  // hang forever.
   try {
-    response = await fetch(params.targetUrl, {
+    const response = await fetch(params.targetUrl, {
       method: params.method,
       headers: extractForwardHeaders(params.requestHeaders, includeBody),
       body: includeBody && params.body !== undefined ? JSON.stringify(params.body) : undefined,
       signal: controller.signal,
     });
+
+    const contentType = response.headers.get("content-type") ?? "application/json";
+    let payload: unknown;
+
+    if (contentType.includes("application/json")) {
+      try {
+        payload = await response.json();
+      } catch (error) {
+        if (controller.signal.aborted) {
+          throw error;
+        }
+        payload = {};
+      }
+    } else {
+      payload = await response.text();
+    }
+
+    return {
+      status: response.status,
+      contentType,
+      payload,
+    };
   } catch (error) {
-    if (error instanceof Error && error.name === "AbortError") {
+    if (controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) {
       throw new UpstreamTimeoutError(`Upstream request timed out after ${timeoutMs}ms`);
     }
     throw error;
   } finally {
     clearTimeout(timeoutHandle);
   }
-
-  const contentType = response.headers.get("content-type") ?? "application/json";
-  let payload: unknown;
-
-  if (contentType.includes("application/json")) {
-    try {
-      payload = await response.json();
-    } catch {
-      payload = {};
-    }
-  } else {
-    payload = await response.text();
-  }
-
-  return {
-    status: response.status,
-    contentType,
-    payload,
-  };
 }
 
 // ---------------------------------------------------------------------------
