@@ -16,4 +16,5 @@ export * from "./game-server.js";
 export * from "./game-runtime-generation-worker.js";
 export * from "./game-runtime.js";
 export * from "./game-service-metrics.js";
+export * from "./http-service-metrics.js";
 export * from "./private-docs.js";
