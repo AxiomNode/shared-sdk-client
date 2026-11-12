@@ -23,6 +23,10 @@
       "types": "./dist/proxy-raw.d.ts",
       "default": "./dist/proxy-raw.js"
     },
+    "./http-service-metrics": {
+      "types": "./dist/http-service-metrics.d.ts",
+      "default": "./dist/http-service-metrics.js"
+    },
     "./ai-engine-client": {
       "types": "./dist/ai-engine-client.d.ts",
       "default": "./dist/ai-engine-client.js"
