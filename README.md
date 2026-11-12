@@ -30,18 +30,16 @@ It should not become a shadow implementation layer for service-specific business
 
 ### Structure
 
-- `typescript/`: production-ready SDK package.
-- `python/`, `kotlin/`: language-specific scaffolds and docs.
-- `openapi/`: reserved OpenAPI sources and generation inputs for future SDK expansion.
-- `tooling/`: generation/build/publishing automation.
+- `typescript/`: the SDK package. It is an internal TypeScript library consumed by the AxiomNode Node services and is the only implemented language.
+
+The former `python/`, `kotlin/`, `openapi/` and `tooling/` folders only contained placeholder READMEs (no code) and were removed. They can be reintroduced together with a real implementation.
 
 ## Dependencies and contracts
 
 ### Contract sources
 
-- The current TypeScript SDK contract generation is driven by `contracts-and-schemas/schemas/json`.
-- `openapi/` is not yet wired into the TypeScript build pipeline.
-- Static catalogs exported by the TypeScript SDK are validated against generated JSON Schema contracts during build.
+- The SDK defines its own zod schemas in `typescript/src/game-schemas.ts`; there is no code generation step. `contracts-and-schemas` is the reference for the HTTP contracts and is kept aligned by hand.
+- Static catalogs exported by the SDK (`game-categories.ts`) are validated against `GameCategoriesSchema` when the module loads.
 
 ### Main consumers
 
@@ -49,8 +47,8 @@ It should not become a shadow implementation layer for service-specific business
 - `bff-mobile`
 - `bff-backoffice`
 - `microservice-quizz`
-- `microservice-wordpass`
-- future Python and Kotlin consumers as those SDKs mature
+- `microservice-word-pass`
+- `microservice-users`
 
 ## Local setup
 
@@ -70,10 +68,6 @@ It should not become a shadow implementation layer for service-specific business
 ## Documentation
 
 - `typescript/README.md`
-- `python/README.md`
-- `kotlin/README.md`
-- `openapi/README.md`
-- `tooling/README.md`
 
 ## Deployment and operations notes
 
