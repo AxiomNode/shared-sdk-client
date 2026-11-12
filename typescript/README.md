@@ -14,17 +14,15 @@ Use this section for reusable TypeScript contracts and transport helpers consume
 
 - `@axiomnode/shared-sdk-client/proxy`: shared HTTP forwarding helpers (JSON mode: `forwardHttp` parses the upstream body).
 - `@axiomnode/shared-sdk-client/proxy-raw`: opt-in raw passthrough (`forwardHttpRaw`) that forwards request and response bodies as Buffers, without `JSON.parse`/`JSON.stringify`, for hops that do not inspect or modify the payload.
-- `@axiomnode/shared-sdk-client/contracts`: shared request/response contracts.
+- `@axiomnode/shared-sdk-client/ai-engine-client`, `/game-categories`, `/private-docs`: the other sub-path exports (see `package.json`).
+- `@axiomnode/shared-sdk-client` (root): everything, including the shared game-service runtime and zod schemas.
 
 ## Build
 
 ```bash
-npm install
+npm ci
 npm run build
 npm test
-
-# generate contracts from contracts-and-schemas
-npm run generate:contracts
 ```
 
 ## Runtime helpers
@@ -36,8 +34,8 @@ npm run generate:contracts
 
 Avoid contract/model and transport-helper duplication across runtime repositories.
 
-Schemas are aligned with `contracts-and-schemas/schemas/json/*.v1.json`.
-Static game catalogs are validated against the generated `GameCategoriesSchema` during build.
+Schemas are written by hand in `src/game-schemas.ts` and kept aligned with `contracts-and-schemas`.
+Static game catalogs are validated against `GameCategoriesSchema` when the module loads.
 
 ## CI/CD
 
