@@ -19,6 +19,10 @@
       "types": "./dist/proxy.d.ts",
       "default": "./dist/proxy.js"
     },
+    "./proxy-raw": {
+      "types": "./dist/proxy-raw.d.ts",
+      "default": "./dist/proxy-raw.js"
+    },
     "./ai-engine-client": {
       "types": "./dist/ai-engine-client.d.ts",
       "default": "./dist/ai-engine-client.js"

@@ -12,7 +12,8 @@ Use this section for reusable TypeScript contracts and transport helpers consume
 
 ## Modules
 
-- `@axiomnode/shared-sdk-client/proxy`: shared HTTP forwarding helpers.
+- `@axiomnode/shared-sdk-client/proxy`: shared HTTP forwarding helpers (JSON mode: `forwardHttp` parses the upstream body).
+- `@axiomnode/shared-sdk-client/proxy-raw`: opt-in raw passthrough (`forwardHttpRaw`) that forwards request and response bodies as Buffers, without `JSON.parse`/`JSON.stringify`, for hops that do not inspect or modify the payload.
 - `@axiomnode/shared-sdk-client/contracts`: shared request/response contracts.
 
 ## Build
